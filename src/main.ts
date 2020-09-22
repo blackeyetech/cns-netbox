@@ -14,8 +14,8 @@ process.on("unhandledRejection", error => {
   console.log("unhandledRejection", error);
 });
 
-// NetboxService class here
-export default class NetboxService extends CNShell {
+// CNNetbox class here
+class CNNetbox extends CNShell {
   // Properties here
   private _netboxServer: string;
   private _netboxApiKey: string;
@@ -128,3 +128,5 @@ export default class NetboxService extends CNShell {
     return res.data;
   }
 }
+
+export { CNNetbox };
