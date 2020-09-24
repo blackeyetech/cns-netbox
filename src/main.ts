@@ -88,7 +88,7 @@ class CNNetbox extends CNShell {
       // Check if there are more pages of results
       if (res.data.next !== null) {
         // The next field is a URL but the it is http:// instead of https:// so fix this
-        let parts = res.data.next.split("/api");
+        let parts = res.data.next.split("/api/");
         url = `${this._netboxServer}/api/${parts[1]}`;
 
         // The next field also contains the query paramters so lets clear params
