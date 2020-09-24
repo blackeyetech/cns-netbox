@@ -45,9 +45,9 @@ class CNNetbox extends CNShell {
   public async get(
     group: string,
     resource: string,
-    params: { [key: string]: any },
+    params?: { [key: string]: any },
     id?: string,
-  ): Promise<any> {
+  ): Promise<{ [key: string]: any }[]> {
     if (netboxApi[group] === undefined) {
       throw this.error(`'${group}' is not a valid group`);
     }
@@ -63,69 +63,43 @@ class CNNetbox extends CNShell {
       url = `${url}/${id}`;
     }
 
-    let res = await this.httpReq
-      .get(url, {
-        headers: {
-          Authorization: `Token ${this._netboxApiKey}`,
-        },
-        params,
-      })
-      .catch(e => {
-        let error: HttpError = {
-          status: e.response.status,
-          message: e.response.data,
-        };
+    let results: { [key: string]: any }[] = [];
 
-        throw error;
-      });
+    // Loop until there are no more pages of results
+    while (true) {
+      let res = await this.httpReq
+        .get(url, {
+          headers: {
+            Authorization: `Token ${this._netboxApiKey}`,
+          },
+          params,
+        })
+        .catch(e => {
+          let error: HttpError = {
+            status: e.response.status,
+            message: e.response.data,
+          };
 
-    return res.data;
-  }
+          throw error;
+        });
 
-  public async getNext(next: string): Promise<any> {
-    if (next === undefined) {
-      return undefined;
+      results = results.concat(res.data.results);
+
+      // Check if there are more pages of results
+      if (res.data.next !== null) {
+        // The next field is a URL but the it is http:// instead of https:// so fix this
+        let parts = res.data.next.split("/api");
+        url = `${this._netboxServer}/api/${parts[1]}`;
+
+        // The next field also contains the query paramters so lets clear params
+        params = undefined;
+      } else {
+        // No more data so break out of loop
+        break;
+      }
     }
 
-    let res = await this.httpReq
-      .get(next, {
-        headers: {
-          Authorization: `Token ${this._netboxApiKey}`,
-        },
-      })
-      .catch(e => {
-        let error: HttpError = {
-          status: e.response.status,
-          message: e.response.data,
-        };
-
-        throw error;
-      });
-
-    return res.data;
-  }
-
-  public async getPrevious(previous: string): Promise<any> {
-    if (previous === undefined) {
-      return undefined;
-    }
-
-    let res = await this.httpReq
-      .get(previous, {
-        headers: {
-          Authorization: `Token ${this._netboxApiKey}`,
-        },
-      })
-      .catch(e => {
-        let error: HttpError = {
-          status: e.response.status,
-          message: e.response.data,
-        };
-
-        throw error;
-      });
-
-    return res.data;
+    return results;
   }
 }
 
