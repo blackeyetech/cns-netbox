@@ -45,7 +45,7 @@ class CNNetbox extends CNShell {
   public async get(
     group: string,
     resource: string,
-    params?: { [key: string]: any },
+    params?: { [key: string]: any } | URLSearchParams,
     id?: string,
   ): Promise<{ [key: string]: any }[]> {
     if (netboxApi[group] === undefined) {
