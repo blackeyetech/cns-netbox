@@ -3,9 +3,19 @@ import CNShell, { HttpError } from "cn-shell";
 
 import { netboxApi } from "./netbox-api";
 
+import fs from "fs";
+
 // Netbox config consts here
 const CFG_NETBOX_SERVER = "NETBOX_SERVER";
 const CFG_NETBOX_API_KEY = "NETBOX_API_KEY";
+
+const CFG_DUMP_NETBOX_DATA = "DUMP_NETBOX_DATA";
+const CFG_LOAD_NETBOX_DATA = "LOAD_NETBOX_DATA";
+const CFG_NETBOX_DATA_DIR = "NETBOX_DATA_DIR";
+
+const DEFAULT_DUMP_NETBOX_DATA = "N"; // Y/y or N/n
+const DEFAULT_LOAD_NETBOX_DATA = "N"; // Y/y or N/n
+const DEFAULT_NETBOX_DATA_DIR = "/tmp";
 
 // HTTP Prop Patterns here
 
@@ -19,6 +29,9 @@ class CNNetbox extends CNShell {
   // Properties here
   private _netboxServer: string;
   private _netboxApiKey: string;
+  private _dumpNetboxData: boolean;
+  private _loadNetboxData: boolean;
+  private _netboxDataDir: string;
 
   // Constructor here
   constructor(name: string) {
@@ -26,6 +39,31 @@ class CNNetbox extends CNShell {
 
     this._netboxServer = this.getRequiredCfg(CFG_NETBOX_SERVER);
     this._netboxApiKey = this.getRequiredCfg(CFG_NETBOX_API_KEY);
+
+    let dumpNetboxData = this.getCfg(
+      CFG_DUMP_NETBOX_DATA,
+      DEFAULT_DUMP_NETBOX_DATA,
+    );
+    if (dumpNetboxData.toUpperCase() === "Y") {
+      this._dumpNetboxData = true;
+    } else {
+      this._dumpNetboxData = false;
+    }
+
+    let loadNetboxData = this.getCfg(
+      CFG_LOAD_NETBOX_DATA,
+      DEFAULT_LOAD_NETBOX_DATA,
+    );
+    if (loadNetboxData.toUpperCase() === "Y") {
+      this._loadNetboxData = true;
+    } else {
+      this._loadNetboxData = false;
+    }
+
+    this._netboxDataDir = this.getCfg(
+      CFG_NETBOX_DATA_DIR,
+      DEFAULT_NETBOX_DATA_DIR,
+    );
   }
 
   // Abstract method implementations here
@@ -57,13 +95,25 @@ class CNNetbox extends CNShell {
       );
     }
 
+    let path = `${this._netboxDataDir}/netbox-${group}-${resource}.json`;
+    let results: { [key: string]: any }[] = [];
+
+    if (this._loadNetboxData) {
+      this.info("Loading netbox data from (%s)", path);
+      try {
+        results = require(path);
+      } catch (e) {
+        this.error("Path (%s) does not exist!", path);
+      }
+
+      return results;
+    }
+
     let url = `${this._netboxServer}${netboxApi[group][resource]}`;
 
     if (id !== undefined) {
       url = `${url}/${id}`;
     }
-
-    let results: { [key: string]: any }[] = [];
 
     // Loop until there are no more pages of results
     while (true) {
@@ -97,6 +147,11 @@ class CNNetbox extends CNShell {
         // No more data so break out of loop
         break;
       }
+    }
+
+    if (this._dumpNetboxData) {
+      this.info("Dumping netbox region data to (%s)", path);
+      fs.writeFileSync(path, JSON.stringify(results));
     }
 
     return results;
