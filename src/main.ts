@@ -34,8 +34,8 @@ class CNNetbox extends CNShell {
   private _netboxDataDir: string;
 
   // Constructor here
-  constructor(name: string) {
-    super(name);
+  constructor(name: string, master?: CNShell) {
+    super(name, master);
 
     this._netboxServer = this.getRequiredCfg(CFG_NETBOX_SERVER);
     this._netboxApiKey = this.getRequiredCfg(CFG_NETBOX_API_KEY);
