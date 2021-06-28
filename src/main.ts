@@ -38,7 +38,7 @@ class CNNetbox extends CNShell {
     super(name, master);
 
     this._netboxServer = this.getRequiredCfg(CFG_NETBOX_SERVER);
-    this._netboxApiKey = this.getRequiredCfg(CFG_NETBOX_API_KEY);
+    this._netboxApiKey = this.getRequiredCfg(CFG_NETBOX_API_KEY, false, true);
 
     let dumpNetboxData = this.getCfg(
       CFG_DUMP_NETBOX_DATA,
